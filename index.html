@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monster Slayer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Jost&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Jost', sans-serif;
+      background: url('p2.avif') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(15, 15, 15, 0.85);
+      padding: 2rem;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(128, 0, 255, 0.4);
+      backdrop-filter: blur(8px);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .health-bar {
+      height: 24px;
+      background-color: #333;
+      border-radius: 50px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      box-shadow: inset 0 0 8px #000;
+    }
+
+    .health-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #03e9f4, #6f42c1);
+      width: 100%;
+      transition: width 0.5s ease-in-out;
+    }
+
+    .btn-box {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+      max-width: 450px;
+      margin: 0 auto 2rem;
+    }
+
+    .btn-custom {
+      background: linear-gradient(135deg, #ffffff, #000000);
+      color: #fff;
+      font-weight: bold;
+      padding: 0.6rem 1rem;
+      border: none;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-custom:hover {
+      background: linear-gradient(135deg, #cccccc, #111111);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+      transform: scale(1.02);
+    }
+
+    .log-container {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .log-entry {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .log-player { color: #4dabf7; }
+    .log-monster { color: #ffd43b; }
+    .log-heal { color: #69db7c; }
+    .log-surrender { color: #ffa8a8; }
+
+    @media (max-width: 576px) {
+      .btn-custom {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container text-center">
+    <header>
+      <h1 class="display-5 fw-bold text-white">Monster Slayer</h1>
+    </header>
+
+    <div>
+      <h6>Monster Health</h6>
+      <div class="health-bar">
+        <div class="health-fill" :style="monsterHealthStyle"></div>
+      </div>
+
+      <h6>Your Health</h6>
+      <div class="health-bar">
+        <div class="health-fill" :style="playerHealthStyle"></div>
+      </div>
+    </div>
+
+    <div v-if="winner" class="my-4">
+      <h3 v-if="winner === 'player'" class="text-light">You Win!</h3>
+      <h3 v-else-if="winner === 'monster'" class="text-light">You Lose!</h3>
+      <h3 v-else class="text-light">It's a Draw!</h3>
+      <button class="btn btn-outline-light mt-3" @click="resetGame">Play Again</button>
+    </div>
+
+    <div class="btn-box" v-if="!winner">
+      <div class="d-grid gap-2">
+        <button class="btn btn-custom" @click="attackMonster">ATTACK</button>
+        <button class="btn btn-custom" :disabled="!mayUseSpecialAttack" @click="specialAttack">SPECIAL ATTACK</button>
+        <button class="btn btn-custom" @click="healPlayer">HEAL</button>
+        <button class="btn btn-custom" @click="surrender">SURRENDER</button>
+      </div>
+    </div>
+
+    <div class="log-container text-start" v-if="logMessages.length">
+      <h5 class="text-white mb-3">Battle Log</h5>
+      <div v-for="(log, index) in logMessages.slice().reverse()" :key="index" class="log-entry" :class="log.class">
+        {{ log.message }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sound Effects -->
+  <audio id="attackSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_85b90e25b4.mp3"></audio>
+  <audio id="healSound" src="https://cdn.pixabay.com/download/audio/2022/02/23/audio_a7061d6a99.mp3"></audio>
+  <audio id="specialSound" src="https://cdn.pixabay.com/download/audio/2023/03/28/audio_94c3c1bda9.mp3"></audio>
+  <audio id="loseSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1aa3f90b76.mp3"></audio>
+  <audio id="winSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c03312c85d.mp3"></audio>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    createApp({
+      data() {
+        return {
+          monsterHealth: 100,
+          playerHealth: 100,
+          currentRound: 0,
+          winner: null,
+          logMessages: [],
+        };
+      },
+      computed: {
+        monsterHealthStyle() {
+          return { width: Math.max(this.monsterHealth, 0) + '%' };
+        },
+        playerHealthStyle() {
+          return { width: Math.max(this.playerHealth, 0) + '%' };
+        },
+        mayUseSpecialAttack() {
+          return this.currentRound % 3 === 0;
+        }
+      },
+      watch: {
+        monsterHealth(value) {
+          if (value <= 0 && this.playerHealth <= 0) {
+            this.winner = 'draw';
+            this.playSound('loseSound');
+          } else if (value <= 0) {
+            this.winner = 'player';
+            this.playSound('winSound');
+          }
+        },
+        playerHealth(value) {
+          if (value <= 0 && this.monsterHealth <= 0) {
+            this.winner = 'draw';
+            this.playSound('loseSound');
+          } else if (value <= 0) {
+            this.winner = 'monster';
+            this.playSound('loseSound');
+          }
+        }
+      },
+      methods: {
+        playSound(id) {
+          const sound = document.getElementById(id);
+          if (sound) sound.play();
+        },
+        attackMonster() {
+          const damage = getRandomInt(5, 12);
+          this.monsterHealth -= damage;
+          this.addLog(`You hit monster for ${damage}`, 'log-player');
+          this.playSound('attackSound');
+          this.attackPlayer();
+          this.currentRound++;
+        },
+        specialAttack() {
+          const damage = getRandomInt(10, 20);
+          this.monsterHealth -= damage;
+          this.addLog(`Special attack for ${damage}`, 'log-player');
+          this.playSound('specialSound');
+          this.attackPlayer();
+          this.currentRound++;
+        },
+        healPlayer() {
+          const heal = getRandomInt(8, 20);
+          this.playerHealth = Math.min(this.playerHealth + heal, 100);
+          this.addLog(`You healed for ${heal}`, 'log-heal');
+          this.playSound('healSound');
+          this.attackPlayer();
+          this.currentRound++;
+        },
+        surrender() {
+          this.playerHealth = 0;
+          this.addLog('You surrendered!', 'log-surrender');
+          this.playSound('loseSound');
+        },
+        attackPlayer() {
+          const damage = getRandomInt(8, 15);
+          this.playerHealth -= damage;
+          this.addLog(`Monster hits you for ${damage}`, 'log-monster');
+        },
+        resetGame() {
+          this.monsterHealth = 100;
+          this.playerHealth = 100;
+          this.winner = null;
+          this.currentRound = 0;
+          this.logMessages = [];
+        },
+        addLog(message, className) {
+          this.logMessages.push({ message, class: className });
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+ 
+
