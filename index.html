@@ -5,26 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Monster Slayer</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Jost&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Jost&display=swap" rel="stylesheet"/>
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      background: linear-gradient(to right, #0a0a0f, #0b1625);
       color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
     }
 
     #overlay {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       background-color: rgba(255, 0, 0, 0.4);
       opacity: 0;
       pointer-events: none;
@@ -42,74 +40,106 @@
     }
 
     #app {
-      max-width: 800px;
-      background: #1f1f1f;
-      padding: 2rem;
-      border-radius: 20px;
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 92vw;
+      max-width: 400px;
+      padding: 1.2rem;
+      border-radius: 16px;
+      background: rgba(10, 10, 20, 0.92);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      border: 3px solid;
+      border-image: linear-gradient(to right, #00c9ff, #92fe9d) 1;
       text-align: center;
+      overflow: hidden;
     }
 
     .health-bar {
-      height: 24px;
-      background-color: #333;
+      height: 20px;
+      background-color: #1a1a1a;
       border-radius: 50px;
       overflow: hidden;
       margin-bottom: 1rem;
-      box-shadow: inset 0 0 8px #000;
+      box-shadow: 0 0 10px #fff3;
     }
 
     .health-fill {
       height: 100%;
-      background: linear-gradient(90deg, #03e9f4, #6f42c1);
+      background: linear-gradient(to right, #43e97b, #38f9d7);
       width: 100%;
-      transition: width 0.5s ease-in-out;
+      transition: width 0.4s ease-in-out;
+      animation: pulseBar 2s infinite alternate;
+    }
+
+    @keyframes pulseBar {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.3); }
     }
 
     .avatar {
-      width: 100px;
-      height: 100px;
+      width: 75px;
+      height: 75px;
       border-radius: 50%;
       object-fit: cover;
-      margin: 1rem auto;
-      box-shadow: 0 0 20px rgba(255,255,255,0.4);
-      border: 2px solid #03e9f4;
+      margin: 0.5rem auto;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+      border: 2px solid #6a82fb;
     }
 
     .log-container {
-      max-height: 200px;
+      max-height: 110px;
       overflow-y: auto;
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      padding: 1rem;
+      border-radius: 8px;
+      padding: 0.75rem;
       text-align: left;
+      font-size: 0.85rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      margin-top: 0.5rem;
     }
 
-    .log-player { color: #4dabf7; }
-    .log-monster { color: #ffd43b; }
-    .log-heal { color: #69db7c; }
-    .log-surrender { color: #ffa8a8; }
+    .log-player { color: #00d2ff; }
+    .log-monster { color: #f093fb; }
+    .log-heal { color: #7efff5; }
+    .log-surrender { color: #f9a8a8; }
 
     .btn-action {
-      background-color: #03e9f4;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
       color: #000;
-      border: 2px solid #03e9f4;
+      font-weight: bold;
+      border: none;
+      font-size: 0.9rem;
+      padding: 0.5rem;
+      box-shadow: 0 4px 10px rgba(255, 255, 255, 0.15);
       transition: all 0.3s ease;
     }
 
     .btn-action:hover {
-      background-color: transparent;
-      color: #03e9f4;
+      background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+      transform: scale(1.05);
+    }
+
+    h1, h3, h5 {
+      font-family: 'Jost', sans-serif;
+    }
+
+    @media (max-width: 420px) {
+      h1 { font-size: 1.4rem; }
+      .btn-action { font-size: 0.8rem; padding: 0.45rem; }
+      .log-container { font-size: 0.75rem; }
     }
   </style>
 </head>
 <body>
   <div id="overlay"></div>
 
-  <div id="app" class="container">
+  <div id="app">
     <header>
-      <img src="https://cdn-icons-png.flaticon.com/512/1685/1685355.png" alt="Monster Avatar" class="avatar"/>
-      <h1 class="display-5 fw-bold">Monster Slayer</h1>
+      <img src="P1.jpg" alt="Monster Avatar" class="avatar"/>
+      <h1 class="fw-bold">Monster Slayer</h1>
     </header>
 
     <div>
@@ -118,29 +148,29 @@
         <div class="health-fill" :style="monsterHealthStyle"></div>
       </div>
 
-      <img src="https://cdn-icons-png.flaticon.com/512/194/194938.png" alt="Player Avatar" class="avatar"/>
+      <img src="p.webp" alt="Player Avatar" class="avatar"/>
       <h6>Your Health</h6>
       <div class="health-bar">
         <div class="health-fill" :style="playerHealthStyle"></div>
       </div>
     </div>
 
-    <div v-if="winner" class="my-4">
+    <div v-if="winner" class="my-2">
       <h3 v-if="winner === 'player'" class="text-success">You Win!</h3>
       <h3 v-else-if="winner === 'monster'" class="text-danger">You Lose!</h3>
       <h3 v-else class="text-warning">It's a Draw!</h3>
-      <button class="btn btn-outline-light mt-3" @click="resetGame">Play Again</button>
+      <button class="btn btn-outline-light mt-2 btn-sm" @click="resetGame">Play Again</button>
     </div>
 
-    <div class="d-grid gap-2" v-if="!winner">
+    <div class="d-grid gap-2 my-2" v-if="!winner">
       <button class="btn btn-action" @click="attackMonster">ATTACK</button>
       <button class="btn btn-action" :disabled="!mayUseSpecialAttack" @click="specialAttack">SPECIAL ATTACK</button>
       <button class="btn btn-action" @click="healPlayer">HEAL</button>
       <button class="btn btn-action" @click="surrender">SURRENDER</button>
     </div>
 
-    <div class="log-container mt-4" v-if="logMessages.length">
-      <h5>Battle Log</h5>
+    <div class="log-container" v-if="logMessages.length">
+      <h5 class="mb-2">Battle Log</h5>
       <div v-for="(log, index) in logMessages.slice().reverse()" :key="index" :class="log.class">
         {{ log.message }}
       </div>
@@ -238,6 +268,12 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 
